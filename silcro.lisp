@@ -8,7 +8,8 @@
    :redirect-to
    :get-id
    :param
-   :s-file))
+   :s-file
+   :s-dir))
 (in-package :silcro)
 
 (defmacro s-method (method)
@@ -38,10 +39,21 @@
 
 (defmacro s-file (server file &optional url)
   (when (not url)
-    (setf url file))
+    (setf url (eval file)))
   `(s-get (,server ,url)
           (setf (cdr (assoc "Content-Type" res :test #'string=)) "text/css")
-          ,(if (with-open-file (in file)
+          ,(if (with-open-file (in (eval file))
                  (> 1000000 (file-length in)))
-               (alexandria:read-file-into-string file)
+               (alexandria:read-file-into-string (eval file))
                `(alexandria:read-file-into-string ,file))))
+
+(defmacro s-dir (server dir)
+  (let ((files))
+    (cl-fad:walk-directory
+     (eval `(lisperati:relative-file ,dir))
+     (lambda (file)
+       (push (princ-to-string file) files)))
+    (cons 'progn
+          (loop for file in files
+             for url = (concatenate 'string "/" (subseq file (cl-ppcre:scan dir file)))
+             collect `(s-file ,server ,file ,url)))))
