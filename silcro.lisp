@@ -9,7 +9,11 @@
    :get-id
    :param
    :s-file
-   :s-dir))
+   :s-dir
+   :set-cookie
+   :get-cookie
+   :set-session
+   :get-session))
 (in-package :silcro)
 
 (defmacro s-method (method)
@@ -41,11 +45,11 @@
   (when (not url)
     (setf url (eval file)))
   `(s-get (,server ,url)
-          (setf (cdr (assoc "Content-Type" res :test #'string=)) "text/css")
+          (setf (cdr (assoc "Content-Type" res :test #'string=)) (mime-type ,file))
           ,(if (with-open-file (in (eval file))
                  (> 1000000 (file-length in)))
-               (alexandria:read-file-into-string (eval file))
-               `(alexandria:read-file-into-string ,file))))
+               (alexandria:read-file-into-string (eval file) :external-format :latin1)
+               `(alexandria:read-file-into-string ,file :external-format :latin1))))
 
 (defmacro s-dir (server dir)
   (let ((files))
