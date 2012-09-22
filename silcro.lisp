@@ -29,16 +29,34 @@
   (when (not url)
     (setf url (eval file)))
   `(s-get (,server ,url)
-          (setf (cdr (assoc "Content-Type" res :test #'string=)) (mime-type ,file))
+          (setf (cdr (assoc "Content-Type" res :test #'string=)) (or (mime-type ,file)
+                                                                     "text/plain"))
           ,(if (with-open-file (in (eval file))
                  (> 1000000 (file-length in)))
                (alexandria:read-file-into-string (eval file) :external-format :latin1)
-               `(alexandria:read-file-into-string ,file :external-format :latin1))))
+               `(progn
+                  (write-headers)
+                  (write-file ,file (alexandria:assoc-value res :stream))
+                  (response-written)))))
+
+(defun write-file (path stream &key (buffer-size 4096) (external-format :latin1))
+  (declare (optimize (debug 3)))
+  (with-open-file (filestream path :external-format external-format :element-type '(unsigned-byte 8))
+    (let ((buffer (make-array buffer-size))
+          (content-left (file-length filestream)))
+      (do ()
+          ((not (> content-left 0)))
+        (let ((to-read (if (> content-left buffer-size)
+                           buffer-size
+                           content-left)))
+          (read-sequence buffer filestream :end to-read)
+          (write-sequence buffer stream :end to-read)
+          (decf content-left to-read))))))
 
 (defmacro s-dir (server dir)
   (let ((files))
     (cl-fad:walk-directory
-     (eval `(lisperati:relative-file ,dir))
+     dir
      (lambda (file)
        (push (princ-to-string file) files)))
     (cons 'progn
