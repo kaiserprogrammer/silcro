@@ -12,4 +12,6 @@
                (:file "cookie" :depends-on ("package"))
                (:file "mime-types" :depends-on ("package")))
   :depends-on (:ironclad
-               :cl-fad))
+               :cl-fad
+               :anaphora
+               :alexandria))

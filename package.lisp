@@ -1,5 +1,5 @@
 (defpackage :silcro
-  (:use :cl :stampede)
+  (:use :cl :stampede :alexandria :anaphora)
   (:export
    :s-get
    :s-post
@@ -13,5 +13,8 @@
    :set-cookie
    :get-cookie
    :set-session
-   :get-session))
+   :get-session
+   :write-to-client
+   :response-written
+   :flush-headers))
 

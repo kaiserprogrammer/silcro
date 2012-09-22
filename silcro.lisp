@@ -17,7 +17,7 @@
 (defmacro redirect-to (url)
   `(progn (setf (cdr (assoc :status res)) 302)
           (nconc res (list (cons "Location" ,url)))
-          ""))
+          (response-written)))
 
 (defmacro get-id ()
   `(parse-integer (param :id)))
@@ -35,7 +35,7 @@
                  (> 1000000 (file-length in)))
                (alexandria:read-file-into-string (eval file) :external-format :latin1)
                `(progn
-                  (write-headers)
+                  (flush-headers)
                   (write-file ,file (alexandria:assoc-value res :stream))
                   (response-written)))))
 
@@ -63,3 +63,13 @@
           (loop for file in files
              for url = (concatenate 'string "/" (subseq file (cl-ppcre:scan dir file)))
              collect `(s-file ,server ,file ,url)))))
+
+(defmacro write-to-client (text)
+  `(let ((stream (assoc-value res :stream)))
+     (format stream "~a" ,text)))
+
+(defmacro response-written ()
+  `(set-response-written res))
+
+(defmacro flush-headers ()
+  `(write-headers res))
