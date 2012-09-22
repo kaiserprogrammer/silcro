@@ -10,4 +10,6 @@
   :components ((:file "package")
                (:file "silcro" :depends-on ("package"))
                (:file "cookie" :depends-on ("package"))
-               (:file "mime-types" :depends-on ("package"))))
+               (:file "mime-types" :depends-on ("package")))
+  :depends-on (:ironclad
+               :cl-fad))
