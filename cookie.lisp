@@ -169,12 +169,8 @@ replaced."
     (format nil "~4,'0d-~2,'0d-~2,'0d ~2,'0d:~2,'0d:~2,'0d"
             year month date hour minute second)))
 
-(defconstant +day-names+
-  #("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun")
-  "The three-character names of the seven days of the week - needed
-for cookie date format.")
+(defvar +day-names+
+  #("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun"))
 
-(defconstant +month-names+
-  #("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")
-  "The three-character names of the twelve months - needed for cookie
-date format.")
+(defvar +month-names+
+  #("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))
