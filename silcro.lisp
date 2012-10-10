@@ -29,18 +29,33 @@
   (when (not url)
     (setf url (eval file)))
   `(s-get (,server ,url)
-          (setf (cdr (assoc "Content-Type" res :test #'string=)) (or (mime-type ,file)
+          (setf (cdr (assoc "Content-Type" res :test #'string=)) ,(or (mime-type file)
                                                                      "text/plain"))
-          ,(if (with-open-file (in (eval file))
-                 (> 1000000 (file-length in)))
-               (alexandria:read-file-into-string (eval file) :external-format :latin1)
-               `(progn
-                  (flush-headers)
-                  (write-file ,file (alexandria:assoc-value res :stream))
-                  (response-written)))))
+          ,(let ((file-length (with-open-file (in (eval file))
+                                (file-length in))))
+                (if (> 1000000 file-length)
+                    `(progn
+                       (set-last-modification-date ,(rfc1123-write-date file))
+                       ,(alexandria:read-file-into-string (eval file) :external-format :latin1))
+                    `(progn
+                       (last-modification-date ,file)
+                       (flush-headers)
+                       (write-file ,file (alexandria:assoc-value res :stream))
+                       (response-written))))))
+
+(defun rfc1123-write-date (path)
+  (local-time:to-rfc1123-timestring
+   (local-time:universal-to-timestamp
+    (file-write-date path))))
+
+(defmacro set-last-modification-date (date)
+  `(nconc res (list (cons "Last-Modified-Time"
+                          ,date))))
+
+(defmacro last-modification-date (path)
+  `(set-last-modification-date ,(rfc1123-write-date path)))
 
 (defun write-file (path stream &key (buffer-size 4096) (external-format :latin1))
-  (declare (optimize (debug 3)))
   (with-open-file (filestream path :external-format external-format :element-type '(unsigned-byte 8))
     (let ((buffer (make-array buffer-size))
           (content-left (file-length filestream)))
