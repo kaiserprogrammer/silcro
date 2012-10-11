@@ -35,9 +35,12 @@
                                 (file-length in))))
                 (if (> 1000000 file-length)
                     `(progn
+                       (set-content-length ,(with-open-file (in file)
+                                                            (file-length in)))
                        (set-last-modification-date ,(rfc1123-write-date file))
                        ,(alexandria:read-file-into-string (eval file) :external-format :latin1))
                     `(progn
+                       (content-length ,file)
                        (last-modification-date ,file)
                        (flush-headers)
                        (write-file ,file (alexandria:assoc-value res :stream))
@@ -47,6 +50,14 @@
   (local-time:to-rfc1123-timestring
    (local-time:universal-to-timestamp
     (file-write-date path))))
+
+(defmacro set-content-length (length)
+  `(nconc res (list (cons "Content-Length"
+                          ,length))))
+
+(defmacro content-length (file)
+  `(with-open-file (in ,file)
+     (set-content-length (file-length in))))
 
 (defmacro set-last-modification-date (date)
   `(nconc res (list (cons "Last-Modified"
