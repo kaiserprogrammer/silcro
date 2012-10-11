@@ -49,7 +49,7 @@
     (file-write-date path))))
 
 (defmacro set-last-modification-date (date)
-  `(nconc res (list (cons "Last-Modified-Time"
+  `(nconc res (list (cons "Last-Modified"
                           ,date))))
 
 (defmacro last-modification-date (path)
