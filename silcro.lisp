@@ -34,7 +34,7 @@
           ,(let ((file-length (with-open-file (in (eval file))
                                 (file-length in))))
                 (if (> 1000000 file-length)
-                    `(progn
+                    `(when-modified ,file
                        (set-content-length ,(with-open-file (in file)
                                                             (file-length in)))
                        (set-last-modification-date ,(rfc1123-write-date file))
@@ -45,6 +45,15 @@
                        (flush-headers)
                        (write-file ,file (alexandria:assoc-value res :stream))
                        (response-written))))))
+
+(defmacro when-modified (file &body body)
+  `(let ((timestring (assoc-value req "If-Modified-Since" :test 'equal)))
+     (if (and timestring
+              (>= (parse-rfc-1123-date timestring)
+                  (file-write-date ,file)))
+         (progn (setf (cdr (assoc :status res)) 304)
+                "")
+         (progn ,@body))))
 
 (defun rfc1123-write-date (path)
   (local-time:to-rfc1123-timestring

@@ -162,6 +162,18 @@ replaced."
             minute
             second)))
 
+(defun parse-rfc-1123-date (timestring)
+  (encode-universal-time (parse-integer (subseq timestring 23 25))
+                         (parse-integer (subseq timestring 20 22))
+                         (parse-integer (subseq timestring 17 19))
+                         (parse-integer (subseq timestring 5 7))
+                         (or (iter (for i from 0 below (length +month-names+))
+                                   (when (string= (subseq timestring 8 11) (svref +month-names+ i))
+                                     (return (1+ i))))
+                             1)
+                         (parse-integer (subseq timestring 12 16))
+                         0))
+
 (defun iso-time (&optional (time (get-universal-time)))
   "Returns the universal time TIME as a string in full ISO format."
   (multiple-value-bind (second minute hour date month year)
