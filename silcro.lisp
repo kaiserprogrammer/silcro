@@ -88,15 +88,16 @@
           (write-sequence buffer stream :end to-read)
           (decf content-left to-read))))))
 
-(defmacro s-dir (server dir)
-  (let ((files))
+(defmacro s-dir (server dir &key (dirs-in-name 1))
+  (let ((files)
+        (dir (princ-to-string (truename dir))))
     (cl-fad:walk-directory
      dir
      (lambda (file)
        (push (princ-to-string file) files)))
     (cons 'progn
           (loop for file in files
-             for url = (concatenate 'string "/" (subseq file (cl-ppcre:scan dir file)))
+             for url = (subseq file (cl-ppcre:scan (format nil "(/[^/]+){~a,~a}$" (1+ dirs-in-name) (1+ dirs-in-name)) file))
              collect `(s-file ,server ,file ,url)))))
 
 (defmacro write-to-client (text)

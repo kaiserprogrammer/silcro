@@ -11,7 +11,8 @@
                (:file "silcro" :depends-on ("package"))
                (:file "cookie" :depends-on ("package"))
                (:file "mime-types" :depends-on ("package")))
-  :depends-on (:ironclad
+  :depends-on (:stampede
+               :ironclad
                :cl-fad
                :anaphora
                :alexandria))
