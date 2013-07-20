@@ -1,13 +1,18 @@
 (in-package :silcro)
 
 (defmacro s-method (method)
-  `(defmacro ,(intern (string-upcase (concatenate 'string "s-" method))) (&rest spec)
-     `(defroute ,(caar spec) ,,(string-upcase method) ,(concatenate 'string "^" (cadar spec) "$")
+  `(defmacro ,(intern (string-upcase (concatenate 'string "s-" method))) ((server regex) &body body)
+     `(defroute ,server ,,(string-upcase method) ,(concatenate 'string "^" regex "$")
                 (lambda (,(intern (string-upcase "req")) ,(intern (string-upcase "res")))
                   (let ((req ,(intern (string-upcase "req")))
                         (res ,(intern (string-upcase "res"))))
                     (declare (ignorable req res))
-                    ,@(cdr spec))))))
+                    (let ,(loop for param in (mapcar
+                                              (lambda (param) (string-upcase (subseq param 1)))
+                                              (cl-ppcre:all-matches-as-strings ":\\w+" regex))
+                             collect (list (intern param)
+                                           `(param ,(intern param :keyword))))
+                      ,@body))))))
 
 (s-method "get")
 (s-method "post")
