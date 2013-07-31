@@ -1,5 +1,5 @@
 (defpackage :silcro
-  (:use :cl :stampede :alexandria :anaphora :iterate)
+  (:use :cl :stampede :alexandria :anaphora)
   (:export
    :s-get
    :s-post
