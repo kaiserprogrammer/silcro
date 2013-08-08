@@ -106,7 +106,7 @@
              collect `(s-file ,server ,file ,url)))))
 
 (defmacro write-to-client (text)
-  `(write-response text (assoc-value res :stream)))
+  `(write-response ,text (assoc-value res :stream)))
 
 (defmacro response-written ()
   `(set-response-written res))
