@@ -26,6 +26,12 @@
 
 (in-package :silcro)
 
+(defvar +day-names+
+  #("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun"))
+
+(defvar +month-names+
+  #("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))
+
 (defclass cookie ()
   ((name :initarg :name
          :reader cookie-name
@@ -180,9 +186,3 @@ replaced."
       (decode-universal-time time)
     (format nil "~4,'0d-~2,'0d-~2,'0d ~2,'0d:~2,'0d:~2,'0d"
             year month date hour minute second)))
-
-(defvar +day-names+
-  #("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun"))
-
-(defvar +month-names+
-  #("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))
