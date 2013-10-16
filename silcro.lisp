@@ -22,6 +22,7 @@
 (defmacro redirect-to (url)
   `(progn (setf (cdr (assoc :status res)) 302)
           (nconc res (list (cons "Location" ,url)))
+          (nconc res (list (cons "Content-Length" "0")))
           (response-written)))
 
 (defmacro get-id ()
