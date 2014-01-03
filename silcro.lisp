@@ -1,3 +1,5 @@
+(declaim (optimize (speed 3) (safety 0) (space 0) (debug 0) (compilation-speed 0)))
+
 (in-package :silcro)
 
 (defmacro s-method (method)
@@ -31,33 +33,49 @@
 (defmacro param (key)
   `(cdr (assoc ,key (cdr (assoc :params req)) :test #'equal)))
 
-(defmacro s-file (server file &optional url)
-  (when (not url)
-    (setf url (eval file)))
-  `(s-get (,server ,url)
-     (setf (cdr (assoc "Content-Type" res :test #'string=)) ,(or (mime-type file)
-                                                                 "text/plain"))
-     ,(let ((file-length (with-open-file (in (eval file))
-                           (file-length in))))
+(defmacro s-file ((server url) &optional file)
+  (when (not file)
+    (setf file url))
+  `(let ((csaved-buffer)
+         (cfile-length))
+     (s-get (,server ,url)
+       (let ((file ,file))
+         (setf (cdr (assoc "Content-Type" res :test #'string=)) (or (mime-type file)
+                                                                    "text/plain"))
+         (let ((file-length (with-open-file (in file)
+                              (file-length in))))
+           (setf cfile-length file-length)
            (if (> 1000000 file-length)
-               `(when-modified ,file
-                  (set-content-length ,(with-open-file (in file)
-                                                       (file-length in)))
-                  (set-last-modification-date ,(rfc1123-write-date file))
-                  ,(with-open-file (in file :element-type '(unsigned-byte 8))
-                                   `(let ((buffer ,(let ((ar (make-array (list (file-length in))
-                                                                         :element-type '(unsigned-byte 8))))
-                                                        (read-sequence ar in)
-                                                        ar)))
-                                      (flush-headers)
-                                      (write-sequence buffer (assoc-value res :stream))
-                                      (response-written))))
-               `(progn
-                  (content-length ,file)
-                  (last-modification-date ,file)
-                  (flush-headers)
-                  (write-file ,file (alexandria:assoc-value res :stream))
-                  (response-written))))))
+               (when-modified file
+                 (set-content-length (with-open-file (in file)
+                                       (file-length in)))
+                 (set-last-modification-date (rfc1123-write-date file))
+                 (with-open-file (in file :element-type '(unsigned-byte 8))
+                   (let ((buffer (let ((ar (make-array (list (file-length in))
+                                                       :element-type '(unsigned-byte 8))))
+                                   (read-sequence ar in)
+                                   ar)))
+                     (flush-headers)
+                     (write-sequence buffer (assoc-value res :stream))
+                     (response-written))))
+               (progn
+                 (content-length file)
+                 (last-modification-date file)
+                 (flush-headers)
+                 (write-file file (alexandria:assoc-value res :stream))
+                 (response-written))))))))
+
+(defmacro s-dir (server dir &key (dirs-in-name 1))
+  (let ((files)
+        (dir (princ-to-string (truename dir))))
+    (cl-fad:walk-directory
+     dir
+     (lambda (file)
+       (push (princ-to-string file) files)))
+    (cons 'progn
+          (loop for file in files
+             for url = (subseq file (cl-ppcre:scan (format nil "(/[^/]+){~a,~a}$" (1+ dirs-in-name) (1+ dirs-in-name)) file))
+             collect `(s-file ,server ,file ,url)))))
 
 (defmacro when-modified (file &body body)
   `(let ((timestring (assoc-value req "If-Modified-Since" :test 'equal)))
@@ -86,32 +104,20 @@
                           ,date))))
 
 (defmacro last-modification-date (path)
-  `(set-last-modification-date ,(rfc1123-write-date path)))
+  `(set-last-modification-date (rfc1123-write-date ,path)))
 
 (defun write-file (path stream &key (buffer-size 4096) (external-format :latin1))
   (with-open-file (filestream path :external-format external-format :element-type '(unsigned-byte 8))
-    (let ((buffer (make-array buffer-size))
+    (let ((buffer (make-array (the fixnum buffer-size)))
           (content-left (file-length filestream)))
       (do ()
-          ((not (> content-left 0)))
-        (let ((to-read (if (> content-left buffer-size)
+          ((not (> (the fixnum content-left) 0)))
+        (let ((to-read (if (> (the fixnum content-left) buffer-size)
                            buffer-size
                            content-left)))
           (read-sequence buffer filestream :end to-read)
           (write-sequence buffer stream :end to-read)
           (decf content-left to-read))))))
-
-(defmacro s-dir (server dir &key (dirs-in-name 1))
-  (let ((files)
-        (dir (princ-to-string (truename dir))))
-    (cl-fad:walk-directory
-     dir
-     (lambda (file)
-       (push (princ-to-string file) files)))
-    (cons 'progn
-          (loop for file in files
-             for url = (subseq file (cl-ppcre:scan (format nil "(/[^/]+){~a,~a}$" (1+ dirs-in-name) (1+ dirs-in-name)) file))
-             collect `(s-file ,server ,file ,url)))))
 
 (defmacro write-to-client (text)
   `(write-response ,text (assoc-value res :stream)))
