@@ -75,7 +75,7 @@
     (cons 'progn
           (loop for file in files
              for url = (subseq file (cl-ppcre:scan (format nil "(/[^/]+){~a,~a}$" (1+ dirs-in-name) (1+ dirs-in-name)) file))
-             collect `(s-file ,server ,file ,url)))))
+             collect `(s-file (,server ,url) ,file)))))
 
 (defmacro when-modified (file &body body)
   `(let ((timestring (assoc-value req "If-Modified-Since" :test 'equal)))
