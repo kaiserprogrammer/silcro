@@ -1,5 +1,3 @@
-(declaim (optimize (speed 3) (safety 0) (space 0) (debug 0) (compilation-speed 0)))
-
 (in-package :silcro)
 
 (defmacro s-method (method)
