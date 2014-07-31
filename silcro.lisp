@@ -85,9 +85,7 @@
          (progn ,@body))))
 
 (defun rfc1123-write-date (path)
-  (local-time:to-rfc1123-timestring
-   (local-time:universal-to-timestamp
-    (file-write-date path))))
+  (rfc-1123-date (file-write-date path)))
 
 (defmacro set-content-length (length)
   `(nconc res (list (cons "Content-Length"
